@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <title>GBI | نظام تسجيل حضور المصنع</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0A1D30">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GBI">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=Tajawal:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -237,6 +245,34 @@
 <div id="app"></div>
 
 <script>
+/* ===================== PWA: install prompt + service worker ===================== */
+let deferredInstallPrompt=null;
+let installAvailable=false;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  installAvailable=true;
+  if(typeof render==='function') render();
+});
+window.addEventListener('appinstalled', ()=>{
+  installAvailable=false;
+  deferredInstallPrompt=null;
+  if(typeof render==='function') render();
+});
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+async function installApp(){
+  if(!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt=null;
+  installAvailable=false;
+  render();
+}
+
 /* ===================== Constants & helpers ===================== */
 const AR_DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 
@@ -542,6 +578,7 @@ function renderLogin(){
       <div class="credit-line">إعداد وتصميم ${ADMIN_NAME}</div>
     </div>
   </div>
+  ${installAvailable? `<button class="btn btn-ghost" style="margin-top:10px;" data-action="install-app">📲 تثبيت التطبيق على الشاشة الرئيسية</button>` : ''}
   <div class="card">
     <div class="tabs">
       <button class="tab ${mode==='login'?'active':''}" data-action="show-login">تسجيل الدخول</button>
@@ -1256,6 +1293,7 @@ document.getElementById('app').addEventListener('click', (e)=>{
   else if(action==='punct-period'){ ui.punct.period=el.dataset.value; render(); }
   else if(action==='stats-period'){ ui.stats.period=el.dataset.value; render(); }
   else if(action==='export-all-excel') exportAllExcel();
+  else if(action==='install-app') installApp();
   else if(action==='stat-detail'){ ui.statDetail={type:el.dataset.type}; ui.screen='stat-detail'; render(); }
   else if(action==='punct-detail'){ ui.punctDetail={type:el.dataset.type}; ui.screen='punct-detail'; render(); }
   else if(action==='back-to'){ ui.screen=el.dataset.target; render(); }
