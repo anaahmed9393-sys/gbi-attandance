@@ -6,6 +6,7 @@
 <title>GBI | نظام تسجيل حضور المصنع</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=Tajawal:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --navy-deep:#0A1D30;
@@ -156,20 +157,41 @@
   .ticket .t-body{margin-inline-start:70px;}
 
   /* ---- Reports ---- */
-  .report-group{margin-top:14px;border:1px solid rgba(126,157,184,.3);border-radius:10px;overflow:hidden;}
-  .report-group h4{background:var(--navy-card2);padding:9px 12px;font-size:14.5px;display:flex;justify-content:space-between;}
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  th,td{padding:7px 8px;text-align:center;border-bottom:1px solid rgba(126,157,184,.18);}
-  th{color:var(--steel-light);font-weight:700;font-size:11.5px;}
+  .report-group{margin-top:14px;border:1px solid rgba(126,157,184,.3);border-radius:12px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,.2);}
+  .report-group h4{background:linear-gradient(160deg,var(--navy-card2),var(--navy-mid));padding:11px 14px;font-size:14px;font-weight:800;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid rgba(230,192,71,.4);}
+  .table-wrap{border:1px solid rgba(126,157,184,.3);border-radius:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:10px;}
+  .table-wrap table{margin:0;}
+  .scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .scroll-x::-webkit-scrollbar,.table-wrap::-webkit-scrollbar{height:6px;}
+  .scroll-x::-webkit-scrollbar-thumb,.table-wrap::-webkit-scrollbar-thumb{background:rgba(230,192,71,.4);border-radius:4px;}
+  .scroll-x::-webkit-scrollbar-track,.table-wrap::-webkit-scrollbar-track{background:transparent;}
+  table{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px;}
+  table.wide{min-width:480px;}
+  table.wide7{min-width:640px;}
+  table.wide7 th:nth-child(5),table.wide7 td:nth-child(5){border-inline-start:2px solid rgba(230,192,71,.35);}
+  .legend{font-size:11px;color:var(--steel-light);margin-top:10px;line-height:1.8;}
+  .grand-total.clickable{cursor:pointer;transition:transform .12s ease;}
+  .grand-total.clickable:active{transform:scale(.98);}
+  thead th{background:linear-gradient(180deg,rgba(230,192,71,.14),rgba(230,192,71,.06));color:var(--amber);font-weight:800;font-size:11px;padding:10px 9px;border-bottom:2px solid rgba(230,192,71,.45);white-space:nowrap;}
+  tbody td{padding:9px;border-bottom:1px solid rgba(126,157,184,.14);white-space:nowrap;}
+  tbody tr:nth-child(even){background:rgba(255,255,255,.025);}
+  tbody tr:hover{background:rgba(230,192,71,.06);}
+  tbody tr:last-child td{border-bottom:none;}
+  th,td{text-align:center;}
   td.mono,th.mono{font-family:var(--font-mono);direction:ltr;}
-  tfoot td{font-weight:800;background:rgba(230,192,71,.08);color:var(--amber);}
+  tfoot td{font-weight:800;background:rgba(230,192,71,.1);color:var(--amber);border-top:1px solid rgba(230,192,71,.3);padding:9px;}
   .grand-total{margin-top:14px;padding:12px 14px;border-radius:8px;background:linear-gradient(160deg,var(--amber),var(--amber-deep));color:var(--navy-deep);font-weight:800;display:flex;justify-content:space-between;}
+  .letterhead{text-align:center;background:var(--navy-card);border:1px solid rgba(230,192,71,.35);border-radius:12px;padding:18px 14px;margin-top:14px;}
+  .letterhead .lh-brand{display:inline-block;font-family:var(--font-display);font-weight:900;font-size:22px;letter-spacing:2px;color:var(--navy-deep);background:linear-gradient(160deg,var(--amber),var(--amber-deep));padding:5px 16px;border-radius:6px;}
+  .letterhead .lh-title{font-size:17px;margin-top:10px;}
+  .letterhead .lh-sub{font-size:12.5px;color:var(--steel-light);margin-top:4px;}
+  .letterhead .lh-date{font-size:10.5px;color:var(--steel-light);margin-top:6px;opacity:.8;}
   .empty-note{color:var(--steel-light);font-size:13px;padding:14px 4px;text-align:center;}
 
   /* ---- Admin panel ---- */
   .admin-badge{display:inline-block;background:var(--red);color:#fff;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:10px;margin-inline-start:6px;vertical-align:middle;}
-  .admin-row{background:#0C233A;border:1px solid rgba(126,157,184,.3);border-radius:9px;padding:10px;margin-top:10px;}
-  .admin-row .adm-name{font-weight:800;font-size:13.5px;margin-bottom:6px;display:flex;justify-content:space-between;}
+  .admin-row{background:#0C233A;border:1px solid rgba(126,157,184,.3);border-inline-start:4px solid var(--amber);border-radius:9px;padding:11px 12px;margin-top:10px;box-shadow:0 3px 8px rgba(0,0,0,.25);}
+  .admin-row .adm-name{font-weight:800;font-size:13.5px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;padding-bottom:7px;border-bottom:1px solid rgba(126,157,184,.2);}
   .admin-row .adm-name span.code{font-family:var(--font-mono);color:var(--steel-light);font-weight:400;font-size:11.5px;}
   .adm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .adm-grid label{display:block;font-size:10.5px;color:var(--steel-light);margin-bottom:3px;}
@@ -185,6 +207,16 @@
   .perm-btn.off{background:rgba(225,88,75,.15);color:var(--red);border-color:var(--red);}
   .tile-locked{opacity:.4;filter:grayscale(.5);}
   .tile-locked .t-status{color:var(--red);}
+  .flag-bad{color:var(--red) !important;font-weight:700;}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+  .stat-card{background:linear-gradient(160deg,var(--navy-card2),var(--navy-mid));border:1px solid rgba(230,192,71,.3);border-radius:12px;padding:18px 10px;text-align:center;}
+  .stat-card.clickable{cursor:pointer;transition:transform .12s ease,border-color .12s ease;}
+  .stat-card.clickable:active{transform:scale(.97);}
+  .stat-card.clickable:hover{border-color:var(--amber);}
+  .stat-hint{font-size:9.5px;color:var(--amber);margin-top:6px;opacity:.8;}
+  .stat-icon{font-size:24px;}
+  .stat-value{font-size:21px;font-weight:900;color:var(--amber);margin-top:8px;font-family:var(--font-display);}
+  .stat-label{font-size:11px;color:var(--steel-light);margin-top:5px;line-height:1.4;}
 
   @media print{
     body{background:#fff;color:#000;}
@@ -194,6 +226,10 @@
     th{color:#333;}
     tfoot td{background:#f4dfae;color:#000;}
     .grand-total{background:#f4dfae;color:#000;}
+    .letterhead{background:#fff;border-color:#999;color:#000;}
+    .letterhead .lh-title,.letterhead .lh-sub,.letterhead .lh-date{color:#000;}
+    .footer-credit{color:#666;}
+    .flag-bad{color:#b3261e !important;}
   }
 </style>
 </head>
@@ -218,6 +254,20 @@ function minutesBetween(date,t1,t2){
   return Math.round((b-a)/60000);
 }
 function fmtHM(mins){ if(mins==null||isNaN(mins)) return '--:--'; const h=Math.floor(mins/60), m=mins%60; return h+':'+pad(m); }
+
+/* ===================== Official work hours (8:00 - 17:00) ===================== */
+const STANDARD_IN_MIN=8*60;      // 08:00
+const STANDARD_OUT_MIN=17*60;    // 17:00
+const STANDARD_DURATION_MIN=STANDARD_OUT_MIN-STANDARD_IN_MIN; // 9 ساعات
+function timeToMinutesOfDay(t){ if(!t) return null; const p=t.split(':'); return parseInt(p[0],10)*60+parseInt(p[1],10); }
+function punctualityFor(r){
+  const inMin=timeToMinutesOfDay(r.checkIn);
+  const outMin=timeToMinutesOfDay(r.checkOut);
+  const late=(inMin!=null)? Math.max(0, inMin-STANDARD_IN_MIN) : null;
+  const early=(outMin!=null)? Math.max(0, STANDARD_OUT_MIN-outMin) : null;
+  const shortage=(r.minutes!=null)? Math.max(0, STANDARD_DURATION_MIN-r.minutes) : null;
+  return {late,early,shortage};
+}
 
 /* ===================== State ===================== */
 let employees=[], attendance=[], overtime=[], breaksArr=[];
@@ -244,11 +294,18 @@ async function saveBreaks(){ try{ await window.storage.set('breaks_records', JSO
 
 /* ===================== Record logic ===================== */
 function todaysAttendance(code,date){ return attendance.find(r=>r.code===code && r.date===date); }
-function openOvertime(code,date){ return overtime.find(r=>r.code===code && r.date===date && !r.timeOut); }
-function openBreak(code,date){ return breaksArr.find(r=>r.code===code && r.date===date && !r.end); }
+function todaysOvertime(code,date){ return overtime.find(r=>r.code===code && r.date===date); }
+function todaysBreak(code,date){ return breaksArr.find(r=>r.code===code && r.date===date); }
+/* "Open" = started but not yet ended, regardless of calendar date — needed so a session
+   that crosses midnight (started before 12:00 AM, ended after) can still be found and closed. */
+function openAttendanceFor(code){ for(let i=attendance.length-1;i>=0;i--){ if(attendance[i].code===code && !attendance[i].checkOut) return attendance[i]; } return null; }
+function openOvertimeFor(code){ for(let i=overtime.length-1;i>=0;i--){ if(overtime[i].code===code && !overtime[i].timeOut) return overtime[i]; } return null; }
+function openBreakFor(code){ for(let i=breaksArr.length-1;i>=0;i--){ if(breaksArr[i].code===code && !breaksArr[i].end) return breaksArr[i]; } return null; }
 
 async function checkIn(){
   const date=isoDate(new Date());
+  const openRec=openAttendanceFor(currentUser.code);
+  if(openRec){ alert('عندك تسجيل حضور لسه مفتوح من '+dispDate(openRec.date)+' — سجل الانصراف الأول قبل تسجيل حضور جديد.'); return; }
   if(todaysAttendance(currentUser.code,date)) return;
   attendance.push({id:uid(),code:currentUser.code,name:currentUser.name,date,day:dayNameOf(date),checkIn:nowTimeStr(),checkOut:null,minutes:null});
   await saveAttendance();
@@ -256,47 +313,48 @@ async function checkIn(){
   render();
 }
 async function checkOut(){
-  const date=isoDate(new Date());
-  const rec=todaysAttendance(currentUser.code,date);
-  if(!rec||rec.checkOut) return;
+  const rec=openAttendanceFor(currentUser.code);
+  if(!rec) return;
   rec.checkOut=nowTimeStr();
-  rec.minutes=minutesBetween(date,rec.checkIn,rec.checkOut);
+  rec.minutes=minutesBetween(rec.date,rec.checkIn,rec.checkOut);
   await saveAttendance();
   ui.lastTicket={head:'تم تسجيل الانصراف',lines:['الاسم: '+currentUser.name,'الكود: '+currentUser.code,'الوقت: '+shortTime(rec.checkOut),'إجمالي الساعات: '+fmtHM(rec.minutes)]};
   render();
 }
 async function startOvertime(){
   const date=isoDate(new Date());
-  if(openOvertime(currentUser.code,date)) return;
+  const openRec=openOvertimeFor(currentUser.code);
+  if(openRec){ alert('عندك إضافي لسه مفتوح من '+dispDate(openRec.date)+' — سجل إنهاء الإضافي الأول.'); return; }
+  if(todaysOvertime(currentUser.code,date)) return;
   overtime.push({id:uid(),code:currentUser.code,name:currentUser.name,date,day:dayNameOf(date),timeIn:nowTimeStr(),timeOut:null,minutes:null});
   await saveOvertime();
-  ui.lastTicket={head:'بدء وقت إضافي',lines:['الاسم: '+currentUser.name,'الكود: '+currentUser.code,'الوقت: '+shortTime(nowTimeStr())]};
+  ui.lastTicket={head:'بدء الإضافي الشهري',lines:['الاسم: '+currentUser.name,'الكود: '+currentUser.code,'الوقت: '+shortTime(nowTimeStr())]};
   render();
 }
 async function endOvertime(){
-  const date=isoDate(new Date());
-  const rec=openOvertime(currentUser.code,date);
+  const rec=openOvertimeFor(currentUser.code);
   if(!rec) return;
   rec.timeOut=nowTimeStr();
-  rec.minutes=minutesBetween(date,rec.timeIn,rec.timeOut);
+  rec.minutes=minutesBetween(rec.date,rec.timeIn,rec.timeOut);
   await saveOvertime();
-  ui.lastTicket={head:'إنهاء الوقت الإضافي',lines:['الاسم: '+currentUser.name,'الكود: '+currentUser.code,'الوقت: '+shortTime(rec.timeOut),'مدة الإضافي: '+fmtHM(rec.minutes)]};
+  ui.lastTicket={head:'إنهاء الإضافي الشهري',lines:['الاسم: '+currentUser.name,'الكود: '+currentUser.code,'الوقت: '+shortTime(rec.timeOut),'مدة الإضافي: '+fmtHM(rec.minutes)]};
   render();
 }
 async function startBreak(){
   const date=isoDate(new Date());
-  if(openBreak(currentUser.code,date)) return;
+  const openRec=openBreakFor(currentUser.code);
+  if(openRec){ alert('عندك راحة لسه مفتوحة من '+dispDate(openRec.date)+' — سجل إنهاء الراحة الأول.'); return; }
+  if(todaysBreak(currentUser.code,date)) return;
   breaksArr.push({id:uid(),code:currentUser.code,name:currentUser.name,date,day:dayNameOf(date),start:nowTimeStr(),end:null,minutes:null});
   await saveBreaks();
   ui.lastTicket={head:'بدء الراحة',lines:['الاسم: '+currentUser.name,'الكود: '+currentUser.code,'الوقت: '+shortTime(nowTimeStr())]};
   render();
 }
 async function endBreak(){
-  const date=isoDate(new Date());
-  const rec=openBreak(currentUser.code,date);
+  const rec=openBreakFor(currentUser.code);
   if(!rec) return;
   rec.end=nowTimeStr();
-  rec.minutes=minutesBetween(date,rec.start,rec.end);
+  rec.minutes=minutesBetween(rec.date,rec.start,rec.end);
   await saveBreaks();
   ui.lastTicket={head:'انتهاء الراحة',lines:['الاسم: '+currentUser.name,'الكود: '+currentUser.code,'الوقت: '+shortTime(rec.end),'مدة الراحة: '+fmtHM(rec.minutes)]};
   render();
@@ -349,6 +407,19 @@ function togglePermission(code,key){
   saveEmployees();
   render();
 }
+function adminEditEmployee(code){
+  const emp=employees.find(e=>e.code===code);
+  if(!emp) return;
+  const row=document.querySelector(`.admin-row[data-emp="${code}"]`);
+  if(!row) return;
+  const newName=row.querySelector('.emp-name-input').value.trim();
+  const newPass=row.querySelector('.emp-pass-input').value;
+  if(newName) emp.name=newName;
+  if(newPass) emp.password=newPass;
+  saveEmployees();
+  alert('تم حفظ بيانات العامل بنجاح');
+  render();
+}
 function goSection(s){
   ui.lastTicket=null;
   if(s==='admin'){
@@ -359,6 +430,23 @@ function goSection(s){
   }
   if(s==='permissions'){
     ui.screen='permissions';
+    render();
+    return;
+  }
+  if(s==='directory'){
+    ui.screen='directory';
+    render();
+    return;
+  }
+  if(s==='punctuality'){
+    ui.screen='punctuality';
+    if(!ui.punct) ui.punct={period:'day',date:isoDate(new Date())};
+    render();
+    return;
+  }
+  if(s==='stats'){
+    ui.screen='stats';
+    if(!ui.stats) ui.stats={period:'day',date:isoDate(new Date())};
     render();
     return;
   }
@@ -376,9 +464,9 @@ function goDashboard(){ ui.screen='dashboard'; ui.lastTicket=null; render(); }
 const TYPE_CONFIG={
   attendance:{label:'دخول وانصراف', inLabel:'الحضور', outLabel:'الانصراف',
     getIn:r=>r.checkIn, getOut:r=>r.checkOut, setIn:(r,v)=>r.checkIn=v, setOut:(r,v)=>r.checkOut=v, source:()=>attendance, saveFn:()=>saveAttendance()},
-  overtime:{label:'الإضافي', inLabel:'بداية الإضافي', outLabel:'نهاية الإضافي',
+  overtime:{label:'الإضافي الشهري', inLabel:'البداية', outLabel:'النهاية',
     getIn:r=>r.timeIn, getOut:r=>r.timeOut, setIn:(r,v)=>r.timeIn=v, setOut:(r,v)=>r.timeOut=v, source:()=>overtime, saveFn:()=>saveOvertime()},
-  breaks:{label:'الراحات', inLabel:'بداية الراحة', outLabel:'نهاية الراحة',
+  breaks:{label:'الراحات', inLabel:'البداية', outLabel:'النهاية',
     getIn:r=>r.start, getOut:r=>r.end, setIn:(r,v)=>r.start=v, setOut:(r,v)=>r.end=v, source:()=>breaksArr, saveFn:()=>saveBreaks()},
 };
 
@@ -402,12 +490,18 @@ function inPeriod(dateIso,period,refIso){
   }
   return false;
 }
-function periodLabel(){
-  const p=ui.report.period, ref=ui.report.date;
+const REPORT_TITLE={
+  attendance:'تقرير الحضور والانصراف',
+  overtime:'أمر تشغيل ساعات إضافية',
+  breaks:'أمر تشغيل راحات',
+};
+function periodLabelFor(state){
+  const p=state.period, ref=state.date;
   if(p==='day') return dispDate(ref)+' ('+dayNameOf(ref)+')';
   if(p==='month'){ const [y,m]=ref.split('-'); return 'شهر '+m+'/'+y; }
   if(p==='week'){ const {sat,fri}=weekRange(ref); return 'من '+dispDate(isoDate(sat))+' إلى '+dispDate(isoDate(fri)); }
 }
+function periodLabel(){ return periodLabelFor(ui.report); }
 
 function exportWord(){
   const area=document.getElementById('printArea');
@@ -423,7 +517,7 @@ function exportWord(){
       tfoot td{background:#f4dfae;font-weight:bold;}
       .grand{background:#f4dfae;padding:10px;font-weight:bold;text-align:center;margin-top:10px;}
     </style></head><body>
-    <h2 style="text-align:center;">GBI — تقرير ${cfg.label}</h2>
+    <h2 style="text-align:center;">GBI — ${REPORT_TITLE[ui.report.type]}</h2>
     <p style="text-align:center;">${periodLabel()}</p>
     ${area.innerHTML}
     <p style="text-align:center;font-size:11px;color:#777;margin-top:20px;">إعداد وتصميم ${ADMIN_NAME}</p>
@@ -491,31 +585,49 @@ function renderDashboard(){
       <button class="link-btn no-print" data-action="logout">تسجيل خروج ⏻</button>
     </div>
     <div class="grid">
+      <div class="tile full" data-action="goto" data-section="stats">
+        <span class="icon">📈</span><div class="t-title">لوحة الإحصائيات</div>
+        <div class="t-status">نظرة سريعة: الحاضرين، المتأخرين، الإضافي، وأكتر عامل ساعات</div>
+      </div>
+      <div class="tile full" data-action="goto" data-section="punctuality">
+        <span class="icon">⏱️</span><div class="t-title">الالتزام بمواعيد العمل (8:00 - 17:00)</div>
+        <div class="t-status">تقرير التأخير والانصراف المبكر والنقص عن الدوام الرسمي</div>
+      </div>
       <div class="tile full" data-action="goto" data-section="admin">
         <span class="icon">🛠️</span><div class="t-title">لوحة التحكم — تعديل كل السجلات</div>
         <div class="t-status">إضافة أو حذف أو تعديل أي وقت في أي قسم لأي عامل</div>
       </div>
+      <div class="tile full" data-action="goto" data-section="directory">
+        <span class="icon">📇</span><div class="t-title">العاملين المسجلين</div>
+        <div class="t-status">قائمة بكل الأسماء والأكواد وكلمات المرور</div>
+      </div>
       <div class="tile full" data-action="goto" data-section="permissions">
-        <span class="icon">🔐</span><div class="t-title">صلاحيات العاملين</div>
-        <div class="t-status">افتح أو اقفل أي قسم لأي عامل بشكل مستقل</div>
+        <span class="icon">🔐</span><div class="t-title">إدارة العاملين والصلاحيات</div>
+        <div class="t-status">افتح/اقفل أي قسم، أو عدّل اسم/كلمة مرور أي عامل</div>
       </div>
       <div class="tile full" data-action="goto" data-section="reports">
         <span class="icon">📊</span><div class="t-title">التقارير</div><div class="t-status">يومي · أسبوعي · شهري + طباعة وتصدير</div>
       </div>
+      <div class="tile full" data-action="export-all-excel">
+        <span class="icon">📥</span><div class="t-title">تصدير كل البيانات (Excel)</div>
+        <div class="t-status">ملف واحد فيه كل السجلات: حضور، إضافي، راحات</div>
+      </div>
     </div>`;
   }
-  const att=todaysAttendance(currentUser.code,date);
+  const att=openAttendanceFor(currentUser.code) || todaysAttendance(currentUser.code,date);
   let attStatus='لم يسجل حضور اليوم';
-  if(att && !att.checkOut) attStatus='في العمل — دخل '+shortTime(att.checkIn);
+  if(att && !att.checkOut) attStatus='في العمل — دخل '+shortTime(att.checkIn)+(att.date!==date?' ('+dispDate(att.date)+')':'');
   else if(att && att.checkOut) attStatus='انتهى اليوم — '+fmtHM(att.minutes)+' ساعة';
 
-  const ot=openOvertime(currentUser.code,date);
-  const otTodayMinutes=overtime.filter(r=>r.code===currentUser.code&&r.date===date&&r.minutes!=null).reduce((s,r)=>s+r.minutes,0);
-  let otStatus = ot ? 'إضافي جارٍ منذ '+shortTime(ot.timeIn) : (otTodayMinutes? 'إجمالي اليوم: '+fmtHM(otTodayMinutes) : 'لا يوجد إضافي اليوم');
+  const ot=openOvertimeFor(currentUser.code) || todaysOvertime(currentUser.code,date);
+  let otStatus='لا يوجد إضافي اليوم';
+  if(ot && !ot.timeOut) otStatus='إضافي جارٍ — بدأ '+shortTime(ot.timeIn)+(ot.date!==date?' ('+dispDate(ot.date)+')':'');
+  else if(ot && ot.timeOut) otStatus='انتهى — '+fmtHM(ot.minutes);
 
-  const br=openBreak(currentUser.code,date);
-  const brTodayMinutes=breaksArr.filter(r=>r.code===currentUser.code&&r.date===date&&r.minutes!=null).reduce((s,r)=>s+r.minutes,0);
-  let brStatus = br ? 'في راحة منذ '+shortTime(br.start) : (brTodayMinutes? 'إجمالي الراحة: '+fmtHM(brTodayMinutes) : 'لا توجد راحات اليوم');
+  const br=openBreakFor(currentUser.code) || todaysBreak(currentUser.code,date);
+  let brStatus='لا توجد راحة اليوم';
+  if(br && !br.end) brStatus='في راحة — بدأت '+shortTime(br.start)+(br.date!==date?' ('+dispDate(br.date)+')':'');
+  else if(br && br.end) brStatus='انتهت — '+fmtHM(br.minutes);
 
   const canAtt=hasPermission('attendance'), canOt=hasPermission('overtime'), canBr=hasPermission('breaks');
   if(!canAtt) attStatus='🔒 القسم مغلق من الإدارة';
@@ -572,13 +684,13 @@ function ticketHtml(){
 /* ---- Attendance section ---- */
 function renderAttendanceSection(){
   const date=isoDate(new Date());
-  const rec=todaysAttendance(currentUser.code,date);
+  const rec=openAttendanceFor(currentUser.code) || todaysAttendance(currentUser.code,date);
   let actionHtml;
   if(!rec){
     actionHtml=`<button class="btn btn-amber" data-action="check-in">تسجيل حضور الآن</button>`;
   } else if(!rec.checkOut){
     actionHtml=`
-      <div class="readonly">وقت الحضور: <b class="mono">${shortTime(rec.checkIn)}</b></div>
+      <div class="readonly">وقت الحضور: <b class="mono">${shortTime(rec.checkIn)}</b>${rec.date!==date?` <span style="color:var(--amber);">(بدأ ${dispDate(rec.date)})</span>`:''}</div>
       <div class="field"><button class="btn btn-red" data-action="check-out">تسجيل انصراف الآن</button></div>`;
   } else {
     actionHtml=`
@@ -591,59 +703,70 @@ function renderAttendanceSection(){
   ${ticketHtml()}
   <div class="card">
     <h3 style="font-size:14px;margin-bottom:8px;">آخر الأيام</h3>
-    ${history.length? `<table><thead><tr><th>التاريخ</th><th>اليوم</th><th class="mono">حضور</th><th class="mono">انصراف</th><th class="mono">الساعات</th></tr></thead><tbody>
+    ${history.length? `<div class="table-wrap"><table class="wide"><thead><tr><th>التاريخ</th><th>اليوم</th><th class="mono">حضور</th><th class="mono">انصراف</th><th class="mono">الساعات</th></tr></thead><tbody>
       ${history.map(r=>`<tr><td>${dispDate(r.date)}</td><td>${r.day}</td><td class="mono">${shortTime(r.checkIn)}</td><td class="mono">${shortTime(r.checkOut)}</td><td class="mono">${fmtHM(r.minutes)}</td></tr>`).join('')}
-    </tbody></table>` : `<div class="empty-note">لا يوجد سجل بعد</div>`}
+    </tbody></table></div>` : `<div class="empty-note">لا يوجد سجل بعد</div>`}
   </div>`;
 }
 
 /* ---- Overtime section ---- */
 function renderOvertimeSection(){
   const date=isoDate(new Date());
-  const rec=openOvertime(currentUser.code,date);
-  const todays=overtime.filter(r=>r.code===currentUser.code&&r.date===date);
-  const totalToday=todays.filter(r=>r.minutes!=null).reduce((s,r)=>s+r.minutes,0);
-  const actionHtml = rec
-    ? `<div class="readonly">بدأ الإضافي: <b class="mono">${shortTime(rec.timeIn)}</b></div>
-       <div class="field"><button class="btn btn-red" data-action="ot-end">إنهاء الإضافي الآن</button></div>`
-    : `<button class="btn btn-amber" data-action="ot-start">بدء وقت إضافي الآن</button>`;
+  const rec=openOvertimeFor(currentUser.code) || todaysOvertime(currentUser.code,date);
+  let actionHtml;
+  if(!rec){
+    actionHtml=`<button class="btn btn-amber" data-action="ot-start">بدء الإضافي الشهري الآن</button>`;
+  } else if(!rec.timeOut){
+    actionHtml=`
+      <div class="readonly">وقت البداية: <b class="mono">${shortTime(rec.timeIn)}</b>${rec.date!==date?` <span style="color:var(--amber);">(بدأ ${dispDate(rec.date)})</span>`:''}</div>
+      <div class="field"><button class="btn btn-red" data-action="ot-end">إنهاء الإضافي الشهري الآن</button></div>`;
+  } else {
+    actionHtml=`
+      <div class="readonly">بداية: <b class="mono">${shortTime(rec.timeIn)}</b> &nbsp;|&nbsp; نهاية: <b class="mono">${shortTime(rec.timeOut)}</b></div>
+      <div class="readonly" style="margin-top:8px;">إجمالي إضافي اليوم: <b class="mono">${fmtHM(rec.minutes)}</b></div>`;
+  }
+  const history=overtime.filter(r=>r.code===currentUser.code).slice(-7).reverse();
   return sectionHeader('الإضافي الشهري') + `
-  <div class="card">${actionHtml}
-    <div class="readonly" style="margin-top:10px;">إجمالي إضافي اليوم: <b class="mono">${fmtHM(totalToday)}</b></div>
-  </div>
+  <div class="card">${actionHtml}</div>
   ${ticketHtml()}
   <div class="card">
-    <h3 style="font-size:14px;margin-bottom:8px;">جلسات إضافي اليوم</h3>
-    ${todays.length? `<table><thead><tr><th class="mono">بداية</th><th class="mono">نهاية</th><th class="mono">المدة</th></tr></thead><tbody>
-      ${todays.map(r=>`<tr><td class="mono">${shortTime(r.timeIn)}</td><td class="mono">${shortTime(r.timeOut)}</td><td class="mono">${fmtHM(r.minutes)}</td></tr>`).join('')}
-    </tbody></table>` : `<div class="empty-note">لا توجد جلسات إضافي اليوم</div>`}
+    <h3 style="font-size:14px;margin-bottom:8px;">آخر الأيام</h3>
+    ${history.length? `<div class="table-wrap"><table class="wide"><thead><tr><th>التاريخ</th><th>اليوم</th><th class="mono">البداية</th><th class="mono">النهاية</th><th class="mono">المدة</th></tr></thead><tbody>
+      ${history.map(r=>`<tr><td>${dispDate(r.date)}</td><td>${r.day}</td><td class="mono">${shortTime(r.timeIn)}</td><td class="mono">${shortTime(r.timeOut)}</td><td class="mono">${fmtHM(r.minutes)}</td></tr>`).join('')}
+    </tbody></table></div>` : `<div class="empty-note">لا يوجد سجل بعد</div>`}
   </div>`;
 }
 
 /* ---- Breaks section ---- */
 function renderBreaksSection(){
   const date=isoDate(new Date());
-  const rec=openBreak(currentUser.code,date);
-  const todays=breaksArr.filter(r=>r.code===currentUser.code&&r.date===date);
-  const totalToday=todays.filter(r=>r.minutes!=null).reduce((s,r)=>s+r.minutes,0);
-  const actionHtml = rec
-    ? `<div class="readonly">بدأت الراحة: <b class="mono">${shortTime(rec.start)}</b></div>
-       <div class="field"><button class="btn btn-red" data-action="br-end">إنهاء الراحة الآن</button></div>`
-    : `<button class="btn btn-amber" data-action="br-start">بدء راحة الآن</button>`;
+  const rec=openBreakFor(currentUser.code) || todaysBreak(currentUser.code,date);
+  let actionHtml;
+  if(!rec){
+    actionHtml=`<button class="btn btn-amber" data-action="br-start">بدء الراحة الآن</button>`;
+  } else if(!rec.end){
+    actionHtml=`
+      <div class="readonly">وقت البداية: <b class="mono">${shortTime(rec.start)}</b>${rec.date!==date?` <span style="color:var(--amber);">(بدأ ${dispDate(rec.date)})</span>`:''}</div>
+      <div class="field"><button class="btn btn-red" data-action="br-end">إنهاء الراحة الآن</button></div>`;
+  } else {
+    actionHtml=`
+      <div class="readonly">بداية: <b class="mono">${shortTime(rec.start)}</b> &nbsp;|&nbsp; نهاية: <b class="mono">${shortTime(rec.end)}</b></div>
+      <div class="readonly" style="margin-top:8px;">إجمالي الراحة اليوم: <b class="mono">${fmtHM(rec.minutes)}</b></div>`;
+  }
+  const history=breaksArr.filter(r=>r.code===currentUser.code).slice(-7).reverse();
   return sectionHeader('تسجيل الراحات') + `
-  <div class="card">${actionHtml}
-    <div class="readonly" style="margin-top:10px;">إجمالي راحة اليوم: <b class="mono">${fmtHM(totalToday)}</b></div>
-  </div>
+  <div class="card">${actionHtml}</div>
   ${ticketHtml()}
   <div class="card">
-    <h3 style="font-size:14px;margin-bottom:8px;">راحات اليوم</h3>
-    ${todays.length? `<table><thead><tr><th class="mono">بداية</th><th class="mono">نهاية</th><th class="mono">المدة</th></tr></thead><tbody>
-      ${todays.map(r=>`<tr><td class="mono">${shortTime(r.start)}</td><td class="mono">${shortTime(r.end)}</td><td class="mono">${fmtHM(r.minutes)}</td></tr>`).join('')}
-    </tbody></table>` : `<div class="empty-note">لا توجد راحات مسجلة اليوم</div>`}
+    <h3 style="font-size:14px;margin-bottom:8px;">آخر الأيام</h3>
+    ${history.length? `<div class="table-wrap"><table class="wide"><thead><tr><th>التاريخ</th><th>اليوم</th><th class="mono">البداية</th><th class="mono">النهاية</th><th class="mono">المدة</th></tr></thead><tbody>
+      ${history.map(r=>`<tr><td>${dispDate(r.date)}</td><td>${r.day}</td><td class="mono">${shortTime(r.start)}</td><td class="mono">${shortTime(r.end)}</td><td class="mono">${fmtHM(r.minutes)}</td></tr>`).join('')}
+    </tbody></table></div>` : `<div class="empty-note">لا يوجد سجل بعد</div>`}
   </div>`;
 }
 
 /* ---- Admin panel ---- */
+const TYPE_ICON={attendance:'🕒',overtime:'➕',breaks:'☕'};
 function renderAdminPanel(){
   const cfg=TYPE_CONFIG[ui.admin.type];
   const all=cfg.source();
@@ -656,7 +779,7 @@ function renderAdminPanel(){
 
   const rowsHtml = recs.length ? recs.map(r=>`
     <div class="admin-row" data-id="${r.id}">
-      <div class="adm-name"><span>${r.name} <span class="code">كود ${r.code}</span></span><span class="code">${r.day}</span></div>
+      <div class="adm-name"><span>${TYPE_ICON[ui.admin.type]} ${r.name} <span class="code">كود ${r.code}</span></span><span class="code">${r.day}</span></div>
       <div class="adm-grid">
         <div><label>التاريخ</label><input type="date" class="adm-date" value="${r.date}"></div>
         <div></div>
@@ -674,7 +797,7 @@ function renderAdminPanel(){
     <div class="field"><label>القسم</label>
       <div class="tabs">
         <button class="tab ${ui.admin.type==='attendance'?'active':''}" data-action="admin-type" data-value="attendance">دخول وانصراف</button>
-        <button class="tab ${ui.admin.type==='overtime'?'active':''}" data-action="admin-type" data-value="overtime">الإضافي</button>
+        <button class="tab ${ui.admin.type==='overtime'?'active':''}" data-action="admin-type" data-value="overtime">الإضافي الشهري</button>
         <button class="tab ${ui.admin.type==='breaks'?'active':''}" data-action="admin-type" data-value="breaks">الراحات</button>
       </div>
     </div>
@@ -736,23 +859,257 @@ function adminDeleteRow(id){
   render();
 }
 
+/* ---- Employee directory (names/codes/passwords) ---- */
+function renderEmployeeDirectory(){
+  const list=employees.slice().sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+  const rows = list.length ? `
+    <div class="table-wrap"><table><thead><tr><th>الاسم</th><th class="mono">الكود</th><th class="mono">كلمة المرور</th></tr></thead>
+    <tbody>${list.map(e=>`<tr><td>${e.name}</td><td class="mono">${e.code}</td><td class="mono">${e.password}</td></tr>`).join('')}</tbody>
+    </table></div>` : `<div class="empty-note">لا يوجد عاملين مسجلين بعد</div>`;
+  return sectionHeaderPlain('العاملين المسجلين — '+ADMIN_NAME) + `
+  <div class="card no-print"><div class="empty-note" style="padding:0;">إجمالي العاملين المسجلين: ${list.length}</div></div>
+  <div class="card">${rows}</div>`;
+}
+
 /* ---- Permissions panel ---- */
 function renderPermissionsPanel(){
   const rows = employees.length ? employees.map(emp=>{
     const p = emp.permissions || {attendance:true,overtime:true,breaks:true};
     const att=p.attendance!==false, ot=p.overtime!==false, br=p.breaks!==false;
-    return `<div class="admin-row">
+    return `<div class="admin-row" data-emp="${emp.code}">
       <div class="adm-name"><span>${emp.name}</span><span class="code">كود ${emp.code}</span></div>
       <div class="perm-grid">
         <button class="perm-btn ${att?'on':'off'}" data-action="toggle-perm" data-code="${emp.code}" data-key="attendance">دخول وانصراف<br>${att?'✅ مفتوح':'⛔ مغلق'}</button>
-        <button class="perm-btn ${ot?'on':'off'}" data-action="toggle-perm" data-code="${emp.code}" data-key="overtime">الإضافي<br>${ot?'✅ مفتوح':'⛔ مغلق'}</button>
+        <button class="perm-btn ${ot?'on':'off'}" data-action="toggle-perm" data-code="${emp.code}" data-key="overtime">الإضافي الشهري<br>${ot?'✅ مفتوح':'⛔ مغلق'}</button>
         <button class="perm-btn ${br?'on':'off'}" data-action="toggle-perm" data-code="${emp.code}" data-key="breaks">الراحات<br>${br?'✅ مفتوح':'⛔ مغلق'}</button>
+      </div>
+      <div class="adm-grid" style="margin-top:10px;">
+        <div><label>تعديل الاسم</label><input type="text" class="emp-name-input" value="${emp.name}"></div>
+        <div><label>كلمة مرور جديدة</label><input type="password" class="emp-pass-input" placeholder="اتركه فارغًا لعدم التغيير"></div>
+      </div>
+      <div class="adm-actions">
+        <button class="adm-save" data-action="admin-edit-emp" data-code="${emp.code}">💾 حفظ بيانات العامل</button>
       </div>
     </div>`;
   }).join('') : `<div class="empty-note">لا يوجد عاملين مسجلين بعد</div>`;
-  return sectionHeaderPlain('صلاحيات العاملين — '+ADMIN_NAME) + `
-  <div class="card"><div class="empty-note" style="padding:0;">اضغط على أي زر عشان تفتح أو تقفل القسم لهذا العامل</div></div>
+  return sectionHeaderPlain('إدارة العاملين والصلاحيات — '+ADMIN_NAME) + `
+  <div class="card"><div class="empty-note" style="padding:0;">افتح/اقفل أي قسم، أو عدّل اسم/كلمة مرور أي عامل مباشرة</div></div>
   ${rows}`;
+}
+
+/* ---- Punctuality (official 8:00 - 17:00 hours) report — separate from daily/weekly/monthly reports ---- */
+function renderPunctualityReport(){
+  const recs=attendance.filter(r=>inPeriod(r.date,ui.punct.period,ui.punct.date));
+  recs.sort((a,b)=> a.date===b.date ? (a.checkIn||'').localeCompare(b.checkIn||'') : a.date.localeCompare(b.date));
+
+  const groups={};
+  recs.forEach(r=>{
+    const p=punctualityFor(r);
+    if(!groups[r.code]) groups[r.code]={name:r.name,rows:[],lateTotal:0,earlyTotal:0,shortTotal:0};
+    groups[r.code].rows.push(Object.assign({},r,{_p:p}));
+    groups[r.code].lateTotal+=p.late||0;
+    groups[r.code].earlyTotal+=p.early||0;
+    groups[r.code].shortTotal+=p.shortage||0;
+  });
+  const codes=Object.keys(groups).sort((a,b)=>groups[a].name.localeCompare(groups[b].name,'ar'));
+  const grandLate=codes.reduce((s,c)=>s+groups[c].lateTotal,0);
+  const grandEarly=codes.reduce((s,c)=>s+groups[c].earlyTotal,0);
+  const grandShort=codes.reduce((s,c)=>s+groups[c].shortTotal,0);
+
+  const groupsHtml = codes.length ? codes.map(code=>{
+    const g=groups[code];
+    return `<div class="report-group">
+      <h4><span>⏱️ ${g.name} <span class="mono" style="opacity:.7;font-size:11px;">(${code})</span></span><span class="mono">${fmtHM(g.shortTotal)} نقص</span></h4>
+      <div class="scroll-x"><table class="wide7"><thead><tr><th>التاريخ</th><th>اليوم</th><th class="mono">الحضور</th><th class="mono">الانصراف</th><th class="mono">التأخير</th><th class="mono">مبكر</th><th class="mono">النقص</th></tr></thead>
+      <tbody>${g.rows.map(r=>`<tr>
+        <td>${dispDate(r.date)}</td><td>${r.day}</td>
+        <td class="mono">${shortTime(r.checkIn)}</td><td class="mono">${shortTime(r.checkOut)}</td>
+        <td class="mono ${r._p.late>0?'flag-bad':''}">${r._p.late!=null?fmtHM(r._p.late):'--:--'}</td>
+        <td class="mono ${r._p.early>0?'flag-bad':''}">${r._p.early!=null?fmtHM(r._p.early):'--:--'}</td>
+        <td class="mono ${r._p.shortage>0?'flag-bad':''}">${r._p.shortage!=null?fmtHM(r._p.shortage):'--:--'}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="4">إجمالي ${g.name}</td><td class="mono">${fmtHM(g.lateTotal)}</td><td class="mono">${fmtHM(g.earlyTotal)}</td><td class="mono">${fmtHM(g.shortTotal)}</td></tr></tfoot>
+      </table></div>
+    </div>`;
+  }).join('') : `<div class="empty-note">لا توجد سجلات حضور في هذه الفترة</div>`;
+
+  return sectionHeaderPlain('الالتزام بمواعيد العمل الرسمية') + `
+  <div class="card no-print">
+    <div class="field"><label>الفترة</label>
+      <div class="tabs">
+        <button class="tab ${ui.punct.period==='day'?'active':''}" data-action="punct-period" data-value="day">يومي</button>
+        <button class="tab ${ui.punct.period==='week'?'active':''}" data-action="punct-period" data-value="week">أسبوعي</button>
+        <button class="tab ${ui.punct.period==='month'?'active':''}" data-action="punct-period" data-value="month">شهري</button>
+      </div>
+    </div>
+    <div class="field"><label>التاريخ المرجعي</label><input type="date" data-field="punct-date" value="${ui.punct.date}"></div>
+    <div class="legend">⏰ التأخير = الحضور بعد 08:00 &nbsp;|&nbsp; 🚪 مبكر = الانصراف قبل 17:00 &nbsp;|&nbsp; 📉 النقص = أقل من 9 ساعات عمل</div>
+    <div class="row" style="margin-top:10px;">
+      <button class="btn btn-ghost" data-action="print">🖨 طباعة / حفظ PDF</button>
+    </div>
+  </div>
+  <div id="printArea">
+    <div class="letterhead">
+      <div class="lh-brand">GBI</div>
+      <h2 class="lh-title">تقرير الالتزام بمواعيد العمل الرسمية</h2>
+      <div class="lh-sub">دوام العمل الرسمي: 08:00 ص — 05:00 م &nbsp;|&nbsp; ${periodLabelFor(ui.punct)}</div>
+      <div class="lh-date">تاريخ الطباعة: ${dispDate(isoDate(new Date()))} — ${ADMIN_NAME}</div>
+    </div>
+    ${groupsHtml}
+    ${codes.length? `
+    <div class="grand-total clickable" data-action="punct-detail" data-type="late"><span>إجمالي التأخير لكل العاملين ›</span><span class="mono">${fmtHM(grandLate)}</span></div>
+    <div class="grand-total clickable" style="margin-top:8px;" data-action="punct-detail" data-type="early"><span>إجمالي الانصراف المبكر لكل العاملين ›</span><span class="mono">${fmtHM(grandEarly)}</span></div>
+    <div class="grand-total clickable" style="margin-top:8px;" data-action="punct-detail" data-type="short"><span>إجمالي النقص عن الدوام الرسمي ›</span><span class="mono">${fmtHM(grandShort)}</span></div>` : ''}
+  </div>`;
+}
+
+/* ---- Punctuality drill-down: who contributed to a given total ---- */
+function renderPunctDetail(){
+  const type=ui.punctDetail.type;
+  const recs=attendance.filter(r=>inPeriod(r.date,ui.punct.period,ui.punct.date));
+  const byCode={};
+  recs.forEach(r=>{
+    const p=punctualityFor(r);
+    const val = type==='late'?p.late : type==='early'?p.early : p.shortage;
+    if(!val) return;
+    if(!byCode[r.code]) byCode[r.code]={name:r.name,total:0};
+    byCode[r.code].total+=val;
+  });
+  const list=Object.values(byCode).sort((a,b)=>b.total-a.total);
+  const title = type==='late'?'تفاصيل التأخير لكل العاملين' : type==='early'?'تفاصيل الانصراف المبكر لكل العاملين' : 'تفاصيل النقص عن الدوام الرسمي';
+  return sectionHeaderBackTo(title,'punctuality') + `
+  <div class="card no-print"><div class="empty-note" style="padding:0;">${periodLabelFor(ui.punct)}</div></div>
+  <div class="card">
+    ${list.length? `<div class="table-wrap"><table><thead><tr><th>الاسم</th><th class="mono">الإجمالي</th></tr></thead><tbody>${list.map(x=>`<tr><td>${x.name}</td><td class="mono flag-bad">${fmtHM(x.total)}</td></tr>`).join('')}</tbody></table></div>` : `<div class="empty-note">لا يوجد تجاوزات في هذه الفترة 🎉</div>`}
+  </div>`;
+}
+
+/* ---- Stats dashboard ---- */
+function renderStatsPanel(){
+  if(!ui.stats) ui.stats={period:'day',date:isoDate(new Date())};
+  const recsAtt=attendance.filter(r=>inPeriod(r.date,ui.stats.period,ui.stats.date));
+  const recsOt=overtime.filter(r=>inPeriod(r.date,ui.stats.period,ui.stats.date));
+
+  const presentCodes=new Set(recsAtt.filter(r=>r.checkIn).map(r=>r.code));
+  const presentCount=presentCodes.size;
+  const lateCount=recsAtt.filter(r=>r.checkIn && timeToMinutesOfDay(r.checkIn)>STANDARD_IN_MIN).length;
+  const totalEmployees=employees.length;
+  const absentCount=Math.max(0, totalEmployees-presentCount);
+  const otTotal=recsOt.filter(r=>r.minutes!=null).reduce((s,r)=>s+r.minutes,0);
+
+  const hoursByCode={};
+  recsAtt.filter(r=>r.minutes!=null).forEach(r=>{ hoursByCode[r.code]=(hoursByCode[r.code]||0)+r.minutes; });
+  let topCode=null, topMinutes=0;
+  Object.keys(hoursByCode).forEach(c=>{ if(hoursByCode[c]>topMinutes){ topMinutes=hoursByCode[c]; topCode=c; } });
+  const topEmp=topCode? employees.find(e=>e.code===topCode) : null;
+  const topLabel=topEmp? topEmp.name+' ('+fmtHM(topMinutes)+')' : '--';
+
+  const cards=[
+    {icon:'✅',value:presentCount,label:'الحاضرين خلال الفترة',type:'present'},
+    {icon:'⏰',value:lateCount,label:'مرات التأخير خلال الفترة',type:'late'},
+    {icon:'🚫',value:absentCount,label:'لم يحضروا خلال الفترة (تقديري)',type:'absent'},
+    {icon:'👥',value:totalEmployees,label:'إجمالي العاملين المسجلين',type:'total'},
+    {icon:'➕',value:fmtHM(otTotal),label:'إجمالي ساعات الإضافي خلال الفترة',mono:true,type:'overtime'},
+    {icon:'🏆',value:topLabel,label:'الأكثر ساعات خلال الفترة'},
+  ];
+
+  return sectionHeaderPlain('لوحة الإحصائيات') + `
+  <div class="card no-print">
+    <div class="field"><label>الفترة</label>
+      <div class="tabs">
+        <button class="tab ${ui.stats.period==='day'?'active':''}" data-action="stats-period" data-value="day">يومي</button>
+        <button class="tab ${ui.stats.period==='week'?'active':''}" data-action="stats-period" data-value="week">أسبوعي</button>
+        <button class="tab ${ui.stats.period==='month'?'active':''}" data-action="stats-period" data-value="month">شهري</button>
+      </div>
+    </div>
+    <div class="field"><label>التاريخ المرجعي</label><input type="date" data-field="stats-date" value="${ui.stats.date}"></div>
+    <div class="row" style="margin-top:10px;">
+      <button class="btn btn-ghost" data-action="print">🖨 طباعة / حفظ PDF</button>
+    </div>
+  </div>
+  <div id="printArea">
+    <div class="letterhead">
+      <div class="lh-brand">GBI</div>
+      <h2 class="lh-title">تقرير الإحصائيات العام</h2>
+      <div class="lh-sub">${periodLabelFor(ui.stats)}</div>
+      <div class="lh-date">تاريخ الطباعة: ${dispDate(isoDate(new Date()))} — ${ADMIN_NAME}</div>
+    </div>
+    <div class="stat-grid">
+      ${cards.map(c=>`<div class="stat-card ${c.type?'clickable':''}" ${c.type?`data-action="stat-detail" data-type="${c.type}"`:''}>
+        <div class="stat-icon">${c.icon}</div><div class="stat-value ${c.mono?'mono':''}">${c.value}</div><div class="stat-label">${c.label}</div>
+        ${c.type?'<div class="stat-hint no-print">اضغط للتفاصيل ›</div>':''}
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* ---- Stat detail drill-down ---- */
+function renderStatDetail(){
+  const type=ui.statDetail.type;
+  const recsAtt=attendance.filter(r=>inPeriod(r.date,ui.stats.period,ui.stats.date));
+  const recsOt=overtime.filter(r=>inPeriod(r.date,ui.stats.period,ui.stats.date));
+  let title='', tableHtml='', emptyMsg='لا توجد بيانات';
+
+  if(type==='present'){
+    title='الحاضرون خلال الفترة';
+    const list=recsAtt.filter(r=>r.checkIn).sort((a,b)=> a.date===b.date? a.name.localeCompare(b.name,'ar') : a.date.localeCompare(b.date));
+    tableHtml = list.length ? `<div class="table-wrap"><table class="wide7"><thead><tr><th>التاريخ</th><th>اليوم</th><th>الاسم</th><th class="mono">الكود</th><th class="mono">الحضور</th><th class="mono">الانصراف</th></tr></thead><tbody>
+      ${list.map(r=>`<tr><td>${dispDate(r.date)}</td><td>${r.day}</td><td>${r.name}</td><td class="mono">${r.code}</td><td class="mono">${shortTime(r.checkIn)}</td><td class="mono">${r.checkOut?shortTime(r.checkOut):'لسه في العمل'}</td></tr>`).join('')}
+    </tbody></table></div>` : '';
+    emptyMsg='لا يوجد حاضرين خلال هذه الفترة بعد';
+  } else if(type==='absent'){
+    title='لم يحضروا خلال الفترة (تقديري)';
+    const presentCodes=new Set(recsAtt.filter(r=>r.checkIn).map(r=>r.code));
+    const list=employees.filter(e=>!presentCodes.has(e.code)).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+    tableHtml = list.length ? `<div class="table-wrap"><table><thead><tr><th>الاسم</th><th class="mono">الكود</th></tr></thead><tbody>
+      ${list.map(e=>`<tr><td>${e.name}</td><td class="mono">${e.code}</td></tr>`).join('')}
+    </tbody></table></div>` : '';
+    emptyMsg='كل العاملين حضروا خلال هذه الفترة 🎉';
+  } else if(type==='late'){
+    title='المتأخرون خلال الفترة';
+    const list=recsAtt.filter(r=>r.checkIn && timeToMinutesOfDay(r.checkIn)>STANDARD_IN_MIN)
+      .sort((a,b)=> a.date===b.date? a.name.localeCompare(b.name,'ar') : a.date.localeCompare(b.date));
+    tableHtml = list.length ? `<div class="table-wrap"><table class="wide7"><thead><tr><th>التاريخ</th><th>اليوم</th><th>الاسم</th><th class="mono">الكود</th><th class="mono">الحضور</th><th class="mono">التأخير</th></tr></thead><tbody>
+      ${list.map(r=>`<tr><td>${dispDate(r.date)}</td><td>${r.day}</td><td>${r.name}</td><td class="mono">${r.code}</td><td class="mono">${shortTime(r.checkIn)}</td><td class="mono flag-bad">${fmtHM(timeToMinutesOfDay(r.checkIn)-STANDARD_IN_MIN)}</td></tr>`).join('')}
+    </tbody></table></div>` : '';
+    emptyMsg='لا يوجد متأخرين خلال هذه الفترة 🎉';
+  } else if(type==='total'){
+    title='كل العاملين المسجلين';
+    const list=employees.slice().sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+    tableHtml = list.length ? `<div class="table-wrap"><table><thead><tr><th>الاسم</th><th class="mono">الكود</th></tr></thead><tbody>
+      ${list.map(e=>`<tr><td>${e.name}</td><td class="mono">${e.code}</td></tr>`).join('')}
+    </tbody></table></div>` : '';
+  } else if(type==='overtime'){
+    title='ساعات الإضافي خلال الفترة لكل عامل';
+    const byCode={};
+    recsOt.filter(r=>r.minutes!=null).forEach(r=>{
+      if(!byCode[r.code]) byCode[r.code]={name:r.name,total:0};
+      byCode[r.code].total+=r.minutes;
+    });
+    const list=Object.values(byCode).sort((a,b)=>b.total-a.total);
+    tableHtml = list.length ? `<div class="table-wrap"><table><thead><tr><th>الاسم</th><th class="mono">إجمالي الإضافي</th></tr></thead><tbody>
+      ${list.map(x=>`<tr><td>${x.name}</td><td class="mono">${fmtHM(x.total)}</td></tr>`).join('')}
+    </tbody></table></div>` : '';
+    emptyMsg='لا يوجد إضافي مسجل خلال هذه الفترة';
+  }
+
+  return sectionHeaderBackTo(title,'stats') + `
+  <div class="card">
+    ${tableHtml || `<div class="empty-note">${emptyMsg}</div>`}
+  </div>`;
+}
+
+/* ---- Full data export to Excel (.xlsx) — separate from the periodic reports ---- */
+function exportAllExcel(){
+  if(typeof XLSX==='undefined'){ alert('تعذر تحميل مكتبة Excel — تأكد من الاتصال بالإنترنت وحاول مرة أخرى.'); return; }
+  const wb=XLSX.utils.book_new();
+  const mapAtt=attendance.map(r=>({'الاسم':r.name,'الكود':r.code,'التاريخ':r.date,'اليوم':r.day,'الحضور':shortTime(r.checkIn),'الانصراف':shortTime(r.checkOut),'الساعات':fmtHM(r.minutes)}));
+  const mapOt=overtime.map(r=>({'الاسم':r.name,'الكود':r.code,'التاريخ':r.date,'اليوم':r.day,'البداية':shortTime(r.timeIn),'النهاية':shortTime(r.timeOut),'المدة':fmtHM(r.minutes)}));
+  const mapBr=breaksArr.map(r=>({'الاسم':r.name,'الكود':r.code,'التاريخ':r.date,'اليوم':r.day,'البداية':shortTime(r.start),'النهاية':shortTime(r.end),'المدة':fmtHM(r.minutes)}));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mapAtt.length?mapAtt:[{'لا توجد بيانات':''}]), 'دخول وانصراف');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mapOt.length?mapOt:[{'لا توجد بيانات':''}]), 'الإضافي الشهري');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mapBr.length?mapBr:[{'لا توجد بيانات':''}]), 'الراحات');
+  XLSX.writeFile(wb, 'GBI-جميع-البيانات-'+isoDate(new Date())+'.xlsx');
 }
 
 /* ---- Reports section ---- */
@@ -773,11 +1130,11 @@ function renderReportsSection(){
   const groupsHtml = codes.length ? codes.map(code=>{
     const g=groups[code];
     return `<div class="report-group">
-      <h4><span>${g.name} <span class="mono" style="opacity:.7;font-size:11px;">(${code})</span></span><span class="mono">${fmtHM(g.total)}</span></h4>
-      <table><thead><tr><th>التاريخ</th><th>اليوم</th><th class="mono">${cfg.inLabel}</th><th class="mono">${cfg.outLabel}</th><th class="mono">المدة</th></tr></thead>
+      <h4><span>${TYPE_ICON[ui.report.type]} ${g.name} <span class="mono" style="opacity:.7;font-size:11px;">(${code})</span></span><span class="mono">${fmtHM(g.total)}</span></h4>
+      <div class="scroll-x"><table class="wide"><thead><tr><th>التاريخ</th><th>اليوم</th><th class="mono">${cfg.inLabel}</th><th class="mono">${cfg.outLabel}</th><th class="mono">المدة</th></tr></thead>
       <tbody>${g.rows.map(r=>`<tr><td>${dispDate(r.date)}</td><td>${r.day}</td><td class="mono">${shortTime(cfg.getIn(r))}</td><td class="mono">${shortTime(cfg.getOut(r))}</td><td class="mono">${fmtHM(r.minutes)}</td></tr>`).join('')}</tbody>
       <tfoot><tr><td colspan="4">إجمالي ساعات ${g.name}</td><td class="mono">${fmtHM(g.total)}</td></tr></tfoot>
-      </table>
+      </table></div>
     </div>`;
   }).join('') : `<div class="empty-note">لا توجد سجلات في هذه الفترة</div>`;
 
@@ -786,7 +1143,7 @@ function renderReportsSection(){
     <div class="field"><label>نوع السجل</label>
       <select data-field="type">
         <option value="attendance" ${ui.report.type==='attendance'?'selected':''}>دخول وانصراف</option>
-        <option value="overtime" ${ui.report.type==='overtime'?'selected':''}>الإضافي</option>
+        <option value="overtime" ${ui.report.type==='overtime'?'selected':''}>الإضافي الشهري</option>
         <option value="breaks" ${ui.report.type==='breaks'?'selected':''}>الراحات</option>
       </select>
     </div>
@@ -804,8 +1161,11 @@ function renderReportsSection(){
     </div>
   </div>
   <div id="printArea">
-    <div class="card" style="margin-top:14px;">
-      <h3 style="font-size:15px;">${cfg.label} — ${periodLabel()}</h3>
+    <div class="letterhead">
+      <div class="lh-brand">GBI</div>
+      <h2 class="lh-title">${REPORT_TITLE[ui.report.type]}</h2>
+      <div class="lh-sub">${periodLabel()}</div>
+      <div class="lh-date">تاريخ الطباعة: ${dispDate(isoDate(new Date()))} — ${ADMIN_NAME}</div>
     </div>
     ${groupsHtml}
     ${codes.length? `<div class="grand-total"><span>الإجمالي العام لكل العاملين</span><span class="mono">${fmtHM(grandTotal)}</span></div>`:''}
@@ -814,6 +1174,12 @@ function renderReportsSection(){
 function sectionHeaderPlain(title){
   return `<div class="topbar no-print">
     <button class="link-btn" data-action="back">→ رجوع</button>
+    <h2 style="font-size:17px;">${title}</h2>
+  </div>`;
+}
+function sectionHeaderBackTo(title,target){
+  return `<div class="topbar no-print">
+    <button class="link-btn" data-action="back-to" data-target="${target}">→ رجوع</button>
     <h2 style="font-size:17px;">${title}</h2>
   </div>`;
 }
@@ -831,6 +1197,16 @@ function render(){
     content = renderAdminPanel();
   } else if(ui.screen==='permissions'){
     content = renderPermissionsPanel();
+  } else if(ui.screen==='directory'){
+    content = renderEmployeeDirectory();
+  } else if(ui.screen==='punctuality'){
+    content = renderPunctualityReport();
+  } else if(ui.screen==='stats'){
+    content = renderStatsPanel();
+  } else if(ui.screen==='stat-detail'){
+    content = renderStatDetail();
+  } else if(ui.screen==='punct-detail'){
+    content = renderPunctDetail();
   } else if(ui.screen==='section'){
     if(ui.section==='attendance') content = renderAttendanceSection();
     else if(ui.section==='overtime') content = renderOvertimeSection();
@@ -876,12 +1252,21 @@ document.getElementById('app').addEventListener('click', (e)=>{
   else if(action==='admin-save') adminSaveRow(el.dataset.id);
   else if(action==='admin-delete') adminDeleteRow(el.dataset.id);
   else if(action==='toggle-perm') togglePermission(el.dataset.code, el.dataset.key);
+  else if(action==='admin-edit-emp') adminEditEmployee(el.dataset.code);
+  else if(action==='punct-period'){ ui.punct.period=el.dataset.value; render(); }
+  else if(action==='stats-period'){ ui.stats.period=el.dataset.value; render(); }
+  else if(action==='export-all-excel') exportAllExcel();
+  else if(action==='stat-detail'){ ui.statDetail={type:el.dataset.type}; ui.screen='stat-detail'; render(); }
+  else if(action==='punct-detail'){ ui.punctDetail={type:el.dataset.type}; ui.screen='punct-detail'; render(); }
+  else if(action==='back-to'){ ui.screen=el.dataset.target; render(); }
 });
 document.getElementById('app').addEventListener('change', (e)=>{
   const el=e.target.closest('[data-field]');
   if(!el) return;
   const field=el.dataset.field;
   if(field==='admin-date'){ ui.admin.date=el.value; render(); }
+  else if(field==='punct-date'){ ui.punct.date=el.value; render(); }
+  else if(field==='stats-date'){ ui.stats.date=el.value; render(); }
   else { ui.report[field]=el.value; render(); }
 });
 
