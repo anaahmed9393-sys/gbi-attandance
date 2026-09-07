@@ -15,6 +15,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=Tajawal:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --navy-deep:#0A1D30;
@@ -310,25 +313,44 @@ let employees=[], attendance=[], overtime=[], breaksArr=[];
 let currentUser=null;
 let ui={ screen:'login', loginMode:'login', loginError:'', section:null, lastTicket:null, report:null };
 
-/* ===================== Storage ===================== */
-const STORAGE_PREFIX='gbi_';
-function safeGet(key){
-  try{
-    const v=localStorage.getItem(STORAGE_PREFIX+key);
-    return v ? {value:v} : null;
-  }catch(e){ return null; }
-}
+/* ===================== Storage (Firebase Firestore — shared across all devices) ===================== */
+// عبّي القيم دي من إعدادات مشروعك على Firebase Console > Project settings > Your apps > SDK setup and configuration
+const firebaseConfig = {
+  apiKey: "PASTE_API_KEY_HERE",
+  authDomain: "PASTE_AUTH_DOMAIN_HERE",
+  projectId: "PASTE_PROJECT_ID_HERE",
+  storageBucket: "PASTE_STORAGE_BUCKET_HERE",
+  messagingSenderId: "PASTE_SENDER_ID_HERE",
+  appId: "PASTE_APP_ID_HERE"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const DATA_DOC = db.collection('gbi').doc('main'); // مستند واحد يخزن كل بيانات النظام
+let authReady = firebase.auth().signInAnonymously().catch(function(e){ console.error('auth error', e); });
+
 async function loadData(){
-  const e=safeGet('employees'), a=safeGet('attendance'), o=safeGet('overtime'), b=safeGet('breaks_records');
-  employees = e ? JSON.parse(e.value) : [];
-  attendance = a ? JSON.parse(a.value) : [];
-  overtime = o ? JSON.parse(o.value) : [];
-  breaksArr = b ? JSON.parse(b.value) : [];
+  try{
+    const snap = await DATA_DOC.get();
+    if(snap.exists){
+      const d = snap.data();
+      employees = d.employees || [];
+      attendance = d.attendance || [];
+      overtime = d.overtime || [];
+      breaksArr = d.breaks_records || [];
+    } else {
+      employees = []; attendance = []; overtime = []; breaksArr = [];
+      await DATA_DOC.set({employees,attendance,overtime,breaks_records:breaksArr});
+    }
+  }catch(e){
+    console.error(e);
+    alert('تعذر الاتصال بقاعدة البيانات — تأكد من اتصال الإنترنت.');
+    employees = []; attendance = []; overtime = []; breaksArr = [];
+  }
 }
-async function saveEmployees(){ try{ localStorage.setItem(STORAGE_PREFIX+'employees', JSON.stringify(employees)); }catch(e){ console.error(e); } }
-async function saveAttendance(){ try{ localStorage.setItem(STORAGE_PREFIX+'attendance', JSON.stringify(attendance)); }catch(e){ console.error(e); } }
-async function saveOvertime(){ try{ localStorage.setItem(STORAGE_PREFIX+'overtime', JSON.stringify(overtime)); }catch(e){ console.error(e); } }
-async function saveBreaks(){ try{ localStorage.setItem(STORAGE_PREFIX+'breaks_records', JSON.stringify(breaksArr)); }catch(e){ console.error(e); } }
+async function saveEmployees(){ try{ await DATA_DOC.set({employees}, {merge:true}); }catch(e){ console.error(e); alert('تعذر حفظ البيانات — تأكد من اتصال الإنترنت.'); } }
+async function saveAttendance(){ try{ await DATA_DOC.set({attendance}, {merge:true}); }catch(e){ console.error(e); alert('تعذر حفظ البيانات — تأكد من اتصال الإنترنت.'); } }
+async function saveOvertime(){ try{ await DATA_DOC.set({overtime}, {merge:true}); }catch(e){ console.error(e); alert('تعذر حفظ البيانات — تأكد من اتصال الإنترنت.'); } }
+async function saveBreaks(){ try{ await DATA_DOC.set({breaks_records:breaksArr}, {merge:true}); }catch(e){ console.error(e); alert('تعذر حفظ البيانات — تأكد من اتصال الإنترنت.'); } }
 
 /* ===================== Record logic ===================== */
 function todaysAttendance(code,date){ return attendance.find(r=>r.code===code && r.date===date); }
@@ -1313,6 +1335,7 @@ document.getElementById('app').addEventListener('change', (e)=>{
 /* ===================== Init ===================== */
 (async function init(){
   document.getElementById('app').innerHTML = `<div class="card"><div class="empty-note">جارٍ التحميل...</div></div>`;
+  await authReady;
   await loadData();
   render();
 })();
