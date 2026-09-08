@@ -15,9 +15,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=Tajawal:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --navy-deep:#0A1D30;
@@ -313,44 +312,155 @@ let employees=[], attendance=[], overtime=[], breaksArr=[];
 let currentUser=null;
 let ui={ screen:'login', loginMode:'login', loginError:'', section:null, lastTicket:null, report:null };
 
-/* ===================== Storage (Firebase Firestore — shared across all devices) ===================== */
-// عبّي القيم دي من إعدادات مشروعك على Firebase Console > Project settings > Your apps > SDK setup and configuration
+/* ===================== FIREBASE ===================== */
 const firebaseConfig = {
-  apiKey: "PASTE_API_KEY_HERE",
-  authDomain: "PASTE_AUTH_DOMAIN_HERE",
-  projectId: "PASTE_PROJECT_ID_HERE",
-  storageBucket: "PASTE_STORAGE_BUCKET_HERE",
-  messagingSenderId: "PASTE_SENDER_ID_HERE",
-  appId: "PASTE_APP_ID_HERE"
+  apiKey: "AIzaSyDcQEneU25YE2V7im53zCaHge3X5jxmiMc",
+  authDomain: "gbi-production-be283.firebaseapp.com",
+  projectId: "gbi-production-be283",
+  storageBucket: "gbi-production-be283.firebasestorage.app",
+  messagingSenderId: "56637698883",
+  appId: "1:56637698883:web:8ce69fcfff708504a4f5f6"
 };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const DATA_DOC = db.collection('gbi').doc('main'); // مستند واحد يخزن كل بيانات النظام
-let authReady = firebase.auth().signInAnonymously().catch(function(e){ console.error('auth error', e); });
+let db = null;
+try{
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  db.enablePersistence({synchronizeTabs:true}).catch(e=>{
+    console.warn('Firestore offline persistence not enabled:', e.code || e);
+  });
+}catch(e){
+  console.warn('Firebase init failed (will use local fallback until Firebase is reachable):', e);
+}
+// اسم الكولكشن في نفس مشروع Firebase بتاع برنامج متابعة الإنتاج، لكن منفصل تمامًا عن بياناته
+const APP_COLLECTION = 'attendanceApp';
 
-async function loadData(){
-  try{
-    const snap = await DATA_DOC.get();
-    if(snap.exists){
-      const d = snap.data();
-      employees = d.employees || [];
-      attendance = d.attendance || [];
-      overtime = d.overtime || [];
-      breaksArr = d.breaks_records || [];
-    } else {
-      employees = []; attendance = []; overtime = []; breaksArr = [];
-      await DATA_DOC.set({employees,attendance,overtime,breaks_records:breaksArr});
+/* ===================== Local fallback storage (if Firestore unreachable) ===================== */
+const memoryDB = new Proxy({}, {
+  get(target, key){
+    if(key in target) return target[key];
+    try{
+      const v = localStorage.getItem(key);
+      if(v !== null){ target[key] = v; return v; }
+    }catch(e){}
+    return undefined;
+  },
+  set(target, key, value){
+    target[key] = value;
+    try{ localStorage.setItem(key, value); }catch(e){}
+    return true;
+  }
+});
+
+/* ===================== Pending sync queue ===================== */
+// أي كتابة تفشل توصل لـ Firestore (مشكلة نت وقتها) بتتخزن محليًا فورًا وبتتسجل هنا،
+// وبيتم إعادة المحاولة تلقائيًا لحد ما توصل السيرفر — عشان أي تعديل (اسم، باسورد، سجل حضور)
+// يوصل لكل الأجهزة تلقائيًا مش يفضل عالق على جهاز واحد بس.
+const PENDING_KEY = 'gbi_att_pending_sync_v1';
+function getPendingQueue(){
+  try{ const raw = localStorage.getItem(PENDING_KEY); return raw ? JSON.parse(raw) : []; }
+  catch(e){ return []; }
+}
+function setPendingQueue(q){
+  try{ localStorage.setItem(PENDING_KEY, JSON.stringify(q)); }catch(e){}
+}
+function queuePendingWrite(item){
+  const q = getPendingQueue().filter(x => !(x.type === item.type && x.month === item.month));
+  q.push(item);
+  setPendingQueue(q);
+}
+let flushInProgress = false;
+async function flushPendingQueue(){
+  if(flushInProgress || !db) return;
+  const q = getPendingQueue();
+  if(!q.length) return;
+  flushInProgress = true;
+  const remaining = [];
+  for(const item of q){
+    try{
+      if(item.type === 'employees'){
+        await db.collection(APP_COLLECTION).doc('employees').set({list: item.payload});
+      }else{
+        await db.collection(APP_COLLECTION).doc(item.type).collection('months').doc(item.month).set({records: item.payload});
+      }
+    }catch(e){
+      remaining.push(item);
     }
+  }
+  setPendingQueue(remaining);
+  flushInProgress = false;
+  if(remaining.length < q.length) console.info('gbi-attendance: synced', q.length - remaining.length, 'pending change(s) to server');
+}
+window.addEventListener('online', flushPendingQueue);
+setInterval(flushPendingQueue, 20000);
+
+function monthKeyOf(rec){
+  const d = rec && rec.date;
+  return (d && /^\d{4}-\d{2}/.test(d)) ? d.slice(0,7) : 'unknown';
+}
+
+/* ===================== Storage ===================== */
+async function loadData(){
+  // الموظفين: مستند واحد بس (قائمة صغيرة نسبيًا)
+  try{
+    if(!db) throw new Error('Firestore not available');
+    const snap = await db.collection(APP_COLLECTION).doc('employees').get();
+    employees = (snap.exists && Array.isArray(snap.data().list)) ? snap.data().list : [];
+    memoryDB['gbi_att_employees'] = JSON.stringify(employees);
+  }catch(e){
+    console.warn('loadData employees fallback:', e);
+    const cached = memoryDB['gbi_att_employees'];
+    employees = cached ? JSON.parse(cached) : [];
+  }
+
+  // الحضور/الإضافي/الراحات: بيانات يومية متراكمة، فكل شهر مستند منفصل عشان مفيش حد أقصى لحجم البيانات
+  async function loadMonthlyCollection(type, localKey){
+    try{
+      if(!db) throw new Error('Firestore not available');
+      const monthsSnap = await db.collection(APP_COLLECTION).doc(type).collection('months').get();
+      let merged = [];
+      monthsSnap.forEach(doc=>{ merged = merged.concat(doc.data().records || []); });
+      memoryDB[localKey] = JSON.stringify(merged);
+      return merged;
+    }catch(e){
+      console.warn('loadData', type, 'fallback:', e);
+      const cached = memoryDB[localKey];
+      return cached ? JSON.parse(cached) : [];
+    }
+  }
+  attendance = await loadMonthlyCollection('attendance', 'gbi_att_attendance');
+  overtime = await loadMonthlyCollection('overtime', 'gbi_att_overtime');
+  breaksArr = await loadMonthlyCollection('breaks', 'gbi_att_breaks');
+
+  flushPendingQueue();
+}
+async function saveEmployees(){
+  memoryDB['gbi_att_employees'] = JSON.stringify(employees);
+  try{
+    if(!db) throw new Error('Firestore not available');
+    await db.collection(APP_COLLECTION).doc('employees').set({list: employees});
   }catch(e){
     console.error(e);
-    alert('تعذر الاتصال بقاعدة البيانات — تأكد من اتصال الإنترنت.');
-    employees = []; attendance = []; overtime = []; breaksArr = [];
+    queuePendingWrite({type:'employees', month:null, payload: employees});
   }
 }
-async function saveEmployees(){ try{ await DATA_DOC.set({employees}, {merge:true}); }catch(e){ console.error(e); alert('تعذر حفظ البيانات — تأكد من اتصال الإنترنت.'); } }
-async function saveAttendance(){ try{ await DATA_DOC.set({attendance}, {merge:true}); }catch(e){ console.error(e); alert('تعذر حفظ البيانات — تأكد من اتصال الإنترنت.'); } }
-async function saveOvertime(){ try{ await DATA_DOC.set({overtime}, {merge:true}); }catch(e){ console.error(e); alert('تعذر حفظ البيانات — تأكد من اتصال الإنترنت.'); } }
-async function saveBreaks(){ try{ await DATA_DOC.set({breaks_records:breaksArr}, {merge:true}); }catch(e){ console.error(e); alert('تعذر حفظ البيانات — تأكد من اتصال الإنترنت.'); } }
+async function saveMonthlyCollection(type, localKey, arr){
+  memoryDB[localKey] = JSON.stringify(arr);
+  const byMonth = {};
+  arr.forEach(r=>{ const m = monthKeyOf(r); (byMonth[m] = byMonth[m] || []).push(r); });
+  const months = Object.keys(byMonth);
+  try{
+    if(!db) throw new Error('Firestore not available');
+    await Promise.all(months.map(m=>
+      db.collection(APP_COLLECTION).doc(type).collection('months').doc(m).set({records: byMonth[m]})
+    ));
+  }catch(e){
+    console.error(e);
+    months.forEach(m=> queuePendingWrite({type, month:m, payload: byMonth[m]}));
+  }
+}
+async function saveAttendance(){ await saveMonthlyCollection('attendance', 'gbi_att_attendance', attendance); }
+async function saveOvertime(){ await saveMonthlyCollection('overtime', 'gbi_att_overtime', overtime); }
+async function saveBreaks(){ await saveMonthlyCollection('breaks', 'gbi_att_breaks', breaksArr); }
 
 /* ===================== Record logic ===================== */
 function todaysAttendance(code,date){ return attendance.find(r=>r.code===code && r.date===date); }
@@ -1335,7 +1445,6 @@ document.getElementById('app').addEventListener('change', (e)=>{
 /* ===================== Init ===================== */
 (async function init(){
   document.getElementById('app').innerHTML = `<div class="card"><div class="empty-note">جارٍ التحميل...</div></div>`;
-  await authReady;
   await loadData();
   render();
 })();
